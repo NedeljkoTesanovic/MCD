@@ -1,0 +1,14 @@
+<html>
+<body>
+<pre>
+<h1>µVision3 Build Log</h1>
+<h2>Project:</h2>
+C:\Users\Nedeljko\Desktop\Homework\MUU\D4\d4.uv2
+Project File Date:  04/11/2020
+
+<h2>Output:</h2>
+Build target 'Target 1'
+assembling main.a...
+linking...
+Program Size: data=8.0 xdata=0 code=220
+"d4" - 0 Error(s), 0 Warning(s).
