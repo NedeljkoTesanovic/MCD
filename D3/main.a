@@ -1,0 +1,136 @@
+;Nedeljko Tesanovic, RA181-2017
+;[MUU] - Domaci 3
+
+brzina DATA 20h
+pos1 DATA 22h
+pos2 DATA 23h
+
+ORG 0x00
+JMP MAIN
+
+PODRUTINA_CEKANJA: ;Vrijeme cekanja = brzina * 1 sekund
+	MOV R7, brzina
+	FOR_b:
+		MOV R6, #250
+		FOR_i:
+			MOV R5, #250	
+			FOR_j:
+				NOP
+				DJNZ R5, FOR_j
+			DJNZ R6, FOR_i
+		DJNZ R7, FOR_b
+	RET
+
+MAIN: ;Radjeno u obrnutoj logici za pinove (0 - aktivan pin). Ostala logika je normalna (1-true) 
+	;Setup/Prvo pokretanje, postavljanje default vrijednosti
+	MOV brzina, #30 ;default brzina je prva brzina (brzine su definisane na dnu programa)
+	MOV R2, #1 ;Signal za odabir programa; Default program je PROGRAM1, tj P0: 11111011
+	MOV R4, #0 ;Signal dozvole za rad; Radna petlja je neaktivna, ceka se signal za pocetak
+
+START:
+	MOV R0, P0 ;Switch case za glavni meni
+	CJNE R0, #11111110b, STOP;Provjeri P0.0
+	MOV R4, #1 ;Daj signal dozvole za rad
+	SJMP START
+
+STOP:  	;Zaustavi rad
+	CJNE R0, #11111101b, PROGRAM1 ;Provjeri P0.1
+	MOV R4, #0
+	SJMP START 
+
+PROGRAM1:	 ;Treptanje svih dioda
+	CJNE R0, #11111011b, PROGRAM2 ;Provjeri P0.2 i postavi pocetne uslove
+	MOV R2, #1
+	MOV P2, #0
+	SJMP AKTIVAN_RAD
+
+PROGRAM2: 	 ;Pomjeranje diode sa desna na lijevo
+	CJNE R0, #11110111b, PROGRAM3 ;Provjeri P0.3
+	MOV R2, #2
+	MOV P2, #1
+	SJMP AKTIVAN_RAD
+
+PROGRAM3: ;Ukrstanje dvaju dioda
+	CJNE R0, #11101111b, PROGRAM4 ;Provjeri P0.4
+	MOV R2, #3
+	MOV pos1, #00000001b
+	MOV pos2, #10000000b
+	MOV P2, #10000001b
+	SJMP AKTIVAN_RAD
+
+PROGRAM4:	; Punjenje dioda sa lijeva na desno / Loading bar
+	CJNE R0, #11011111b, BRZINA1 ;Provjeri P0.5
+	MOV R2, #4	
+	MOV P2, #10000000b
+	SJMP AKTIVAN_RAD
+
+BRZINA1: ;Provjeri P0.6
+	CJNE R0, #10111111b, BRZINA2
+	MOV brzina, #30 ;Ovo su podesavanja za moj racunar, originalno sam stavio 1 i 2 za brzine ali je tesko prepoznati razliku
+	SJMP AKTIVAN_RAD
+
+BRZINA2: ;Provjeri P0.7
+	CJNE R0, #01111111b, AKTIVAN_RAD
+	MOV brzina, #60
+AKTIVAN_RAD:
+	CJNE R4, #0, PROGRAM1_RADNA_PETLJA 
+DOSKOK:
+	SJMP START; Za CJNE, jer nema dometa
+	
+PROGRAM1_RADNA_PETLJA:
+	CJNE R2, #1, PROGRAM2_RADNA_PETLJA
+	MOV A, P2
+	CPL A
+	LCALL PODRUTINA_CEKANJA
+	MOV P2, A 
+PROGRAM2_RADNA_PETLJA:
+	CJNE R2, #2, PROGRAM3_RADNA_PETLJA
+	MOV A, P2
+	RL A
+	LCALL PODRUTINA_CEKANJA
+	MOV P2, A 
+PROGRAM3_RADNA_PETLJA:
+	CJNE R2, #3, PROGRAM4_RADNA_PETLJA
+	MOV A, pos1
+	RL A
+	MOV pos1, A
+	MOV A, pos2
+	RR A
+	MOV pos2, A
+	ADD A, pos1
+	LCALL PODRUTINA_CEKANJA
+	MOV P2, A
+	CJNE A, #00011000b, PROGRAM3_ZASTITA ;Zastita od "duplikata"
+	MOV A, pos1
+	RL A
+	MOV pos1, A
+	MOV A, pos2
+	RR A
+	MOV pos2, A
+	ADD A, pos1
+	PROGRAM3_ZASTITA:
+		CJNE A, #10000001b, PROGRAM3_KRAJ_CIKLUSA
+		MOV A, pos1
+		RL A
+		MOV pos1, A
+		MOV A, pos2
+		RR A
+		MOV pos2, A
+		ADD A, pos1
+	PROGRAM3_KRAJ_CIKLUSA:
+		MOV P2, A
+PROGRAM4_RADNA_PETLJA:
+	CJNE R2, #4, DOSKOK
+	CJNE A, #11111111b, PROGRAM4_ZASTITA
+	MOV A, #0
+	PROGRAM4_ZASTITA:
+		MOV A, P2
+		RR A
+		ADD A, #10000000b
+		LCALL PODRUTINA_CEKANJA
+		MOV P2, A 
+		MOV R0, P0;
+
+SJMP DOSKOK
+
+END	

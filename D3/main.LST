@@ -1,0 +1,194 @@
+A51 MACRO ASSEMBLER  MAIN                                                                 04/06/2020 11:34:49 PAGE     1
+
+
+MACRO ASSEMBLER A51 V8.01
+OBJECT MODULE PLACED IN main.OBJ
+ASSEMBLER INVOKED BY: D:\Keil\C51\BIN\A51.EXE main.a SET(SMALL) DEBUG EP
+
+LOC  OBJ            LINE     SOURCE
+
+                       1     ;Nedeljko Tesanovic, RA181-2017
+                       2     ;[MUU] - Domaci 3
+                       3     
+  0020                 4     brzina DATA 20h
+  0022                 5     pos1 DATA 22h
+  0023                 6     pos2 DATA 23h
+                       7     
+0000                   8     ORG 0x00
+0000 800E              9     JMP MAIN
+                      10     
+0002                  11     PODRUTINA_CEKANJA: ;Vrijeme cekanja = brzina * 1 sekund
+0002 AF20             12             MOV R7, brzina
+0004                  13             FOR_b:
+0004 7EFA             14                     MOV R6, #250
+0006                  15                     FOR_i:
+0006 7DFA             16                             MOV R5, #250    
+0008                  17                             FOR_j:
+0008 00               18                                     NOP
+0009 DDFD             19                                     DJNZ R5, FOR_j
+000B DEF9             20                             DJNZ R6, FOR_i
+000D DFF5             21                     DJNZ R7, FOR_b
+000F 22               22             RET
+                      23     
+0010                  24     MAIN: ;Radjeno u obrnutoj logici za pinove (0 - aktivan pin). Ostala logika je normalna (1-
+                             true) 
+                      25             ;Setup/Prvo pokretanje, postavljanje default vrijednosti
+0010 75201E           26             MOV brzina, #30 ;default brzina je prva brzina (brzine su definisane na dnu program
+                             a)
+0013 7A01             27             MOV R2, #1 ;Signal za odabir programa; Default program je PROGRAM1, tj P0: 11111011
+0015 7C00             28             MOV R4, #0 ;Signal dozvole za rad; Radna petlja je neaktivna, ceka se signal za poc
+                             etak
+                      29     
+0017                  30     START:
+0017 A880             31             MOV R0, P0 ;Switch case za glavni meni
+0019 B8FE04           32             CJNE R0, #11111110b, STOP;Provjeri P0.0
+001C 7C01             33             MOV R4, #1 ;Daj signal dozvole za rad
+001E 80F7             34             SJMP START
+                      35     
+0020                  36     STOP:   ;Zaustavi rad
+0020 B8FD04           37             CJNE R0, #11111101b, PROGRAM1 ;Provjeri P0.1
+0023 7C00             38             MOV R4, #0
+0025 80F0             39             SJMP START 
+                      40     
+0027                  41     PROGRAM1:        ;Treptanje svih dioda
+0027 B8FB07           42             CJNE R0, #11111011b, PROGRAM2 ;Provjeri P0.2 i postavi pocetne uslove
+002A 7A01             43             MOV R2, #1
+002C 75A000           44             MOV P2, #0
+002F 8032             45             SJMP AKTIVAN_RAD
+                      46     
+0031                  47     PROGRAM2:        ;Pomjeranje diode sa desna na lijevo
+0031 B8F707           48             CJNE R0, #11110111b, PROGRAM3 ;Provjeri P0.3
+0034 7A02             49             MOV R2, #2
+0036 75A001           50             MOV P2, #1
+0039 8028             51             SJMP AKTIVAN_RAD
+                      52     
+003B                  53     PROGRAM3: ;Ukrstanje dvaju dioda
+003B B8EF0D           54             CJNE R0, #11101111b, PROGRAM4 ;Provjeri P0.4
+003E 7A03             55             MOV R2, #3
+A51 MACRO ASSEMBLER  MAIN                                                                 04/06/2020 11:34:49 PAGE     2
+
+0040 752201           56             MOV pos1, #00000001b
+0043 752380           57             MOV pos2, #10000000b
+0046 75A081           58             MOV P2, #10000001b
+0049 8018             59             SJMP AKTIVAN_RAD
+                      60     
+004B                  61     PROGRAM4:       ; Punjenje dioda sa lijeva na desno / Loading bar
+004B B8DF07           62             CJNE R0, #11011111b, BRZINA1 ;Provjeri P0.5
+004E 7A04             63             MOV R2, #4      
+0050 75A080           64             MOV P2, #10000000b
+0053 800E             65             SJMP AKTIVAN_RAD
+                      66     
+0055                  67     BRZINA1: ;Provjeri P0.6
+0055 B8BF05           68             CJNE R0, #10111111b, BRZINA2
+0058 75201E           69             MOV brzina, #30 ;Ovo su podesavanja za moj racunar, originalno sam stavio 1 i 2 za 
+                             brzine ali je tesko prepoznati razliku
+005B 8006             70             SJMP AKTIVAN_RAD
+                      71     
+005D                  72     BRZINA2: ;Provjeri P0.7
+005D B87F03           73             CJNE R0, #01111111b, AKTIVAN_RAD
+0060 75203C           74             MOV brzina, #60
+0063                  75     AKTIVAN_RAD:
+0063 BC0002           76             CJNE R4, #0, PROGRAM1_RADNA_PETLJA 
+0066                  77     DOSKOK:
+0066 80AF             78             SJMP START; Za CJNE, jer nema dometa
+                      79             
+0068                  80     PROGRAM1_RADNA_PETLJA:
+0068 BA0108           81             CJNE R2, #1, PROGRAM2_RADNA_PETLJA
+006B E5A0             82             MOV A, P2
+006D F4               83             CPL A
+006E 120002           84             LCALL PODRUTINA_CEKANJA
+0071 F5A0             85             MOV P2, A 
+0073                  86     PROGRAM2_RADNA_PETLJA:
+0073 BA0208           87             CJNE R2, #2, PROGRAM3_RADNA_PETLJA
+0076 E5A0             88             MOV A, P2
+0078 23               89             RL A
+0079 120002           90             LCALL PODRUTINA_CEKANJA
+007C F5A0             91             MOV P2, A 
+007E                  92     PROGRAM3_RADNA_PETLJA:
+007E BA0331           93             CJNE R2, #3, PROGRAM4_RADNA_PETLJA
+0081 E522             94             MOV A, pos1
+0083 23               95             RL A
+0084 F522             96             MOV pos1, A
+0086 E523             97             MOV A, pos2
+0088 03               98             RR A
+0089 F523             99             MOV pos2, A
+008B 2522            100             ADD A, pos1
+008D 120002          101             LCALL PODRUTINA_CEKANJA
+0090 F5A0            102             MOV P2, A
+0092 B4180C          103             CJNE A, #00011000b, PROGRAM3_ZASTITA
+0095 E522            104             MOV A, pos1
+0097 23              105             RL A
+0098 F522            106             MOV pos1, A
+009A E523            107             MOV A, pos2
+009C 03              108             RR A
+009D F523            109             MOV pos2, A
+009F 2522            110             ADD A, pos1
+00A1                 111             PROGRAM3_ZASTITA:
+00A1 B4810C          112                     CJNE A, #10000001b, PROGRAM3_KRAJ_CIKLUSA
+00A4 E522            113                     MOV A, pos1
+00A6 23              114                     RL A
+00A7 F522            115                     MOV pos1, A
+00A9 E523            116                     MOV A, pos2
+00AB 03              117                     RR A
+00AC F523            118                     MOV pos2, A
+00AE 2522            119                     ADD A, pos1
+00B0                 120             PROGRAM3_KRAJ_CIKLUSA:
+A51 MACRO ASSEMBLER  MAIN                                                                 04/06/2020 11:34:49 PAGE     3
+
+00B0 F5A0            121                     MOV P2, A
+00B2                 122     PROGRAM4_RADNA_PETLJA:
+00B2 BA04B1          123             CJNE R2, #4, DOSKOK
+00B5 B4FF02          124             CJNE A, #11111111b, PROGRAM4_ZASTITA
+00B8 7400            125             MOV A, #0
+00BA                 126             PROGRAM4_ZASTITA:
+00BA E5A0            127                     MOV A, P2
+00BC 03              128                     RR A
+00BD 2480            129                     ADD A, #10000000b
+00BF 120002          130                     LCALL PODRUTINA_CEKANJA
+00C2 F5A0            131                     MOV P2, A 
+00C4 A880            132                     MOV R0, P0;
+                     133     
+00C6 809E            134     SJMP DOSKOK
+                     135     
+                     136     END     
+A51 MACRO ASSEMBLER  MAIN                                                                 04/06/2020 11:34:49 PAGE     4
+
+SYMBOL TABLE LISTING
+------ ----- -------
+
+
+N A M E                T Y P E  V A L U E   ATTRIBUTES
+
+AKTIVAN_RAD . . . . .  C ADDR   0063H   A   
+BRZINA. . . . . . . .  D ADDR   0020H   A   
+BRZINA1 . . . . . . .  C ADDR   0055H   A   
+BRZINA2 . . . . . . .  C ADDR   005DH   A   
+DOSKOK. . . . . . . .  C ADDR   0066H   A   
+FOR_B . . . . . . . .  C ADDR   0004H   A   
+FOR_I . . . . . . . .  C ADDR   0006H   A   
+FOR_J . . . . . . . .  C ADDR   0008H   A   
+MAIN. . . . . . . . .  C ADDR   0010H   A   
+P0. . . . . . . . . .  D ADDR   0080H   A   
+P2. . . . . . . . . .  D ADDR   00A0H   A   
+PODRUTINA_CEKANJA . .  C ADDR   0002H   A   
+POS1. . . . . . . . .  D ADDR   0022H   A   
+POS2. . . . . . . . .  D ADDR   0023H   A   
+PROGRAM1. . . . . . .  C ADDR   0027H   A   
+PROGRAM1_RADNA_PETLJA  C ADDR   0068H   A   
+PROGRAM2. . . . . . .  C ADDR   0031H   A   
+PROGRAM2_RADNA_PETLJA  C ADDR   0073H   A   
+PROGRAM3. . . . . . .  C ADDR   003BH   A   
+PROGRAM3_KRAJ_CIKLUSA  C ADDR   00B0H   A   
+PROGRAM3_RADNA_PETLJA  C ADDR   007EH   A   
+PROGRAM3_ZASTITA. . .  C ADDR   00A1H   A   
+PROGRAM4. . . . . . .  C ADDR   004BH   A   
+PROGRAM4_RADNA_PETLJA  C ADDR   00B2H   A   
+PROGRAM4_ZASTITA. . .  C ADDR   00BAH   A   
+START . . . . . . . .  C ADDR   0017H   A   
+STOP. . . . . . . . .  C ADDR   0020H   A   
+
+
+REGISTER BANK(S) USED: 0 
+
+
+ASSEMBLY COMPLETE.  0 WARNING(S), 0 ERROR(S)
