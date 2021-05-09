@@ -1,0 +1,217 @@
+C51 COMPILER V8.16   D2                                                                    03/18/2020 02:10:54 PAGE 1   
+
+
+C51 COMPILER V8.16, COMPILATION OF MODULE D2
+OBJECT MODULE PLACED IN d2.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE d2.c OPTIMIZE(0,SPEED) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <at89c51rc2.h>
+   2          
+   3          void delay() //trajanje od 1 sekunde (na mom racunaru ove vrijednosti daju 1s, a ne znam da li da mijenjam
+             - posto ne spustam na plocu; Ako treba na plocu onda samo umjesto 500, staviti 250)
+   4          {
+   5   1              int i,j;
+   6   1              for (i=0;i<500;i++)
+   7   1              {       
+   8   2                      for (j=0;j<500;j++)
+   9   2                      {
+  10   3                      }
+  11   2              }
+  12   1              return;
+  13   1      }
+  14          
+  15          void program1() //treptanje dioda; radice iz bilo kog stanja P2;
+  16          {
+  17   1              if(P2!=0xFF) //ako je ugaseno, upali sve;
+  18   1              {
+  19   2                      P2 = 0xFF;
+  20   2              }
+  21   1              else //inace ugasi sve
+  22   1              {
+  23   2                      P2 = 0x00;
+  24   2              }
+  25   1              return;
+  26   1      }
+  27          
+  28          
+  29          void program2() //pomjera svjetlo od desnog kraja ka lijevom svaku 1 sekundu
+  30          {
+  31   1              if(P2 == 128) //polozaji su u sustini stepeni dvojke
+  32   1              {
+  33   2                      P2 = 1; //skoci sa lijevog kraja na desni
+  34   2              }
+  35   1              else
+  36   1              {
+  37   2                      P2<<=1; //pomjeri za 1 poziciju
+  38   2              }
+  39   1              return;
+  40   1      }
+  41          
+  42          void program3(unsigned char* LED1, unsigned char* LED2) //pomjera dva svjetla sa krajeva do sredine
+  43          {
+  44   1              if((*LED1) == 128) //ako je dosao na desni kraj, vrati se na lijevi; LED2 ce uvijek pratiti LED1 pa nema 
+             -potrebe provjeravati i nju
+  45   1              {
+  46   2                      (*LED1) = 2;
+  47   2                      (*LED2) = 64;
+  48   2              }
+  49   1              else if ((*LED1)==8) //ako je na sredini (8 i 16), preskoci jedan korak, inace bi na sredini bio dva puta
+             - zbog mimoilazenja svjetala
+  50   1              {
+  51   2                      (*LED1)=32;
+  52   2                      (*LED2)=4;
+C51 COMPILER V8.16   D2                                                                    03/18/2020 02:10:54 PAGE 2   
+
+  53   2              }
+  54   1              else
+  55   1              {
+  56   2                      (*LED1)<<=1;
+  57   2                      (*LED2)>>=1;
+  58   2              }
+  59   1              P2 = (*LED1)+(*LED2);  //saberi maske
+  60   1              return;
+  61   1      }
+  62          
+  63          void program4() //puni diode sa lijeva na desno  / loading bar
+  64          {
+  65   1              if(P2>=255)
+  66   1              {
+  67   2              P2 = 0;
+  68   2              }
+  69   1              else
+  70   1              {
+  71   2              P2*=2;
+  72   2              P2++;
+  73   2              }
+  74   1              return;
+  75   1      }
+  76          
+  77          void main()
+  78          {       
+  79   1              unsigned char pos1 = 1; //LED1 pozicija
+  80   1              unsigned char pos2 = 128; //LED2 pozicija
+  81   1              bit start = 1;  //receno mi je da radim po obrnutoj logici, tj da je pritisnut taster jednak nuli;
+  82   1              bit stop = 1;
+  83   1              bit brzina = 1;
+  84   1              unsigned char program = 1;
+  85   1              while(1)
+  86   1              {  
+  87   2                      start = P0_0;
+  88   2                      if(!start) //zapocni program
+  89   2                      {
+  90   3                              stop = P0_1;
+  91   3                              while(stop)
+  92   3                              {
+  93   4                                      stop = P0_1;
+  94   4                                      switch(program)
+  95   4                                      {
+  96   5                                              case 2 : //1011
+  97   5                                                      program2();
+  98   5                                                       break;
+  99   5                                              case 3 : //1101
+ 100   5                                                      program3(&pos1, &pos2);
+ 101   5                                                      break;
+ 102   5                                              case 4 : //1110
+ 103   5                                                      program4();
+ 104   5                                                      break;
+ 105   5                                              default: //x111
+ 106   5                                                      program1();
+ 107   5                                                      break;
+ 108   5                                      }
+ 109   4                                      delay();//default prva brzina;
+ 110   4                                      if(!brzina) //+druga brzina
+ 111   4                                      {
+ 112   5                                              delay();
+ 113   5                                      }
+ 114   4                                      else
+C51 COMPILER V8.16   D2                                                                    03/18/2020 02:10:54 PAGE 3   
+
+ 115   4                                      {
+ 116   5                                      }
+ 117   4                                      //azuriraj izbor;
+ 118   4                      
+ 119   4                                      if(!P0_2)  //program
+ 120   4                                      {
+ 121   5                                              program = 1;
+ 122   5                                      }
+ 123   4                                      else if(!P0_3)
+ 124   4                                      {
+ 125   5                                              program = 2;
+ 126   5                                              P2 = 1;
+ 127   5                                      }
+ 128   4                                      else if (!P0_4)
+ 129   4                                      {
+ 130   5                                              program = 3;
+ 131   5                                      }
+ 132   4                                      else if (!P0_5)
+ 133   4                                      {
+ 134   5                                              P2 = 0;
+ 135   5                                              program = 4;
+ 136   5                                      }
+ 137   4                      
+ 138   4                                      if(!P0_6)  //brzina
+ 139   4                                      {
+ 140   5                                              brzina = 1;
+ 141   5                                      }
+ 142   4                                      else if(!P0_7)
+ 143   4                                      {
+ 144   5                                              brzina = 0;
+ 145   5                                      }
+ 146   4                                      else
+ 147   4                                      {
+ 148   5                                      }
+ 149   4                              }
+ 150   3                      }
+ 151   2                      else
+ 152   2                      {
+ 153   3                              //azuriraj izbor;
+ 154   3                              if(!P0_2)  //program
+ 155   3                              {
+ 156   4                                      program = 1;
+ 157   4                              }
+ 158   3                              else if(!P0_3)
+ 159   3                              {
+ 160   4                                      program = 2;
+ 161   4                              }
+ 162   3                              else if (!P0_4)
+ 163   3                              {
+ 164   4                                      program = 3;
+ 165   4                              }
+ 166   3                              else if (!P0_5)
+ 167   3                              {
+ 168   4                                      program = 4;
+ 169   4                              }
+ 170   3              
+ 171   3                              if(!P0_6)  //brzina
+ 172   3                              {
+ 173   4                                      brzina = 1;
+ 174   4                              }
+ 175   3                              else if(!P0_7)
+ 176   3                              {
+C51 COMPILER V8.16   D2                                                                    03/18/2020 02:10:54 PAGE 4   
+
+ 177   4                                      brzina = 0;
+ 178   4                              }
+ 179   3                              else
+ 180   3                              {
+ 181   4                              }
+ 182   3                      }
+ 183   2              }
+ 184   1              return;
+ 185   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    473    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
