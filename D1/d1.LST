@@ -1,0 +1,219 @@
+C51 COMPILER V8.16   D1                                                                    03/08/2020 19:48:39 PAGE 1   
+
+
+C51 COMPILER V8.16, COMPILATION OF MODULE D1
+OBJECT MODULE PLACED IN d1.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE d1.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          //Nedeljko Tesanovic
+   2          //RA181-2017
+   3          //Domaci: Vjezba#1 - Zadatak#5
+   4          
+   5          bit e_str2num = 0;      //Globalni flagovi za greske funkcija; Laksi debug
+   6          bit e_izracunaj = 0;
+   7          
+   8          char str2num(char* str) //pretvori string u decimalni broj
+   9          {
+  10   1               char broj = 0;
+  11   1               unsigned char i = 0;
+  12   1               bit neg = 0;
+  13   1               
+  14   1               if(str[i] == '-') //u pitanju je negativni broj
+  15   1               {
+  16   2                      i++; //pomjeri se sa minusa
+  17   2                      neg = 1;
+  18   2               }
+  19   1               else
+  20   1               {
+  21   2               }
+  22   1      
+  23   1               if(str[i] == 'b' || str[i] == 'B') //u pitanju je binarni sistem
+  24   1               {
+  25   2                      i++; //pomjeri se na cifre
+  26   2                        while(str[i] != '\0')
+  27   2                        {
+  28   3                              if(str[i] == '0' || str[i] == '1')
+  29   3                              {
+  30   4                                      broj*=2; //Pomnozi sa bazom brojnog sistema - shiftovanje cifara u lijevo da bi napravili mjesta za
+  31   4                                      broj+=(str[i++]-48); //trenutnu cifru na najnizoj poziciji
+  32   4                              }
+  33   3                              else
+  34   3                              {
+  35   4                                      e_str2num = 1;
+  36   4                                      return 1;
+  37   4                              }
+  38   3                        }
+  39   2               }
+  40   1               else if(str[i] == 'H' || str[i] == 'h') //u pitanju je heksadecimalni sistem
+  41   1               {
+  42   2                       i++; //pomjeri se na cifre
+  43   2                        while(str[i] != '\0')
+  44   2                        {
+  45   3                              if(str[i]>='0' && str[i]<='9')  //U pitanju je obicna cifra 0-9; '0' je po decimalnoj vrijednosti ASCII 
+             -tabele 48
+  46   3                              {
+  47   4                                      broj*=16;
+  48   4                                      broj+=(str[i++]-48);
+  49   4                              }
+  50   3                              else if(str[i]>='A' && str[i]<='F')
+  51   3                              {
+  52   4                                      broj*=16;
+  53   4                                      broj+=(str[i++]-55); //U pitanju su heksadecimalne cifre ABCDEF; 'A' je po decimalnoj brijednosti ASCI
+             -I tabele 65; -55 = -65 +10
+C51 COMPILER V8.16   D1                                                                    03/08/2020 19:48:39 PAGE 2   
+
+  54   4                              }
+  55   3                              else if(str[i]>='a' && str[i]<='f')
+  56   3                              {
+  57   4                                      broj*=16;
+  58   4                                      broj+=(str[i++]-87); //U pitanju su heksadecimalne cifre ABCDEF u lowercase-u; 'a' je po decimalnoj br
+             -ijednosti ASCII tabele 97; -87 = -97 +10
+  59   4                              }
+  60   3                              else
+  61   3                              {
+  62   4                                      e_str2num = 1;
+  63   4                                      return 1;
+  64   4                              }
+  65   3                        }
+  66   2               }
+  67   1               else //Ukoliko nije greska, u pitanju je dekadni sistem
+  68   1               {
+  69   2                        while(str[i] != '\0')
+  70   2                        {
+  71   3                                      if(str[i]>='0' && str[i]<='9')
+  72   3                                      {
+  73   4                                              broj*=10;
+  74   4                                              broj+=(str[i++]-48);
+  75   4                                      }
+  76   3                                      else //U pitanju je greska
+  77   3                                      {
+  78   4                                              e_str2num = 1;
+  79   4                                              return 1;
+  80   4                                      }
+  81   3                        }
+  82   2               }
+  83   1               if(neg == 1)
+  84   1               {
+  85   2                      broj*= (-1);
+  86   2               }
+  87   1               else
+  88   1               {
+  89   2               }
+  90   1              return broj;
+  91   1      }
+  92          
+  93          void num2str(char broj, char* retval)   //pretvori decimalni broj u string
+  94          {
+  95   1              char str[10];    //pomocni string jer ce rezultat biti naopacke 
+  96   1              unsigned char i = 0; //brojaci za indekse 
+  97   1              unsigned char j = 0;
+  98   1              bit neg;
+  99   1              if(broj<0)
+ 100   1              {
+ 101   2              neg = 1;
+ 102   2              broj*=(-1);
+ 103   2              retval[j++] = '-';
+ 104   2              }
+ 105   1              else
+ 106   1              {
+ 107   2              neg = 0;
+ 108   2              }
+ 109   1              while (broj)
+ 110   1              {
+ 111   2                              str[i++] = (broj % 10)+48; //Izoluj cifru i pretvori je u ASCII ekvivalentu
+ 112   2                              broj /= 10;     //Odbaci poslednju cifru
+ 113   2              }
+ 114   1              while(i>0)      //Invertuj string
+C51 COMPILER V8.16   D1                                                                    03/08/2020 19:48:39 PAGE 3   
+
+ 115   1              {
+ 116   2                      retval[j++]=str[--i];
+ 117   2              }
+ 118   1              retval[j]='\0';
+ 119   1      } 
+ 120          
+ 121          void kopiraj(char* src, char* dst) //odredisni string "upija" izvorni; Samo korisceni biti ce biti prepisa
+             -ni
+ 122          {
+ 123   1              unsigned char i=0;
+ 124   1              while(src[i] != '\0')
+ 125   1              {
+ 126   2                      dst[i] = src[i];
+ 127   2                      i++;
+ 128   2              }
+ 129   1      }
+ 130          
+ 131          void izracunaj(char* op1, char* op2, char* rez, char operant)
+ 132          {
+ 133   1              char operand1;
+ 134   1              char operand2;
+ 135   1              char retval;
+ 136   1              char retstr[10];
+ 137   1      
+ 138   1              operand1 = str2num(op1);
+ 139   1              operand2 = str2num(op2);
+ 140   1      
+ 141   1              if(operant == '+')
+ 142   1              {
+ 143   2                      retval = operand1 + operand2;
+ 144   2              }
+ 145   1              else if(operant == '-')
+ 146   1              {
+ 147   2                      retval = operand1 - operand2;
+ 148   2              }
+ 149   1              else if(operant == '*')
+ 150   1              {
+ 151   2                      retval = operand1 * operand2;
+ 152   2              }
+ 153   1              else if(operant == '/')
+ 154   1              {
+ 155   2                      if(operand2 != 0)
+ 156   2                      {
+ 157   3                              retval = operand1 / operand2;
+ 158   3                      }
+ 159   2                      else
+ 160   2                      {
+ 161   3                              e_izracunaj = 1; //Greska: dijeljenje sa nulom
+ 162   3                              return;
+ 163   3                      }
+ 164   2              }
+ 165   1              else
+ 166   1              {
+ 167   2                      e_izracunaj = 1;
+ 168   2                      return;
+ 169   2              }
+ 170   1              num2str(retval, retstr); //za debugging; puni odredisni string sa '\0' radi preglednosti rezultata;                                             
+             -           
+ 171   1              kopiraj(retstr, rez);                     
+ 172   1      }
+ 173          
+ 174          void main()
+C51 COMPILER V8.16   D1                                                                    03/08/2020 19:48:39 PAGE 4   
+
+ 175          {
+ 176   1              char rezultat[10] = {'\0','\0','\0','\0','\0','\0','\0','\0','\0','\0'};
+ 177   1              izracunaj("5","H1",rezultat,'*');
+ 178   1              izracunaj("b1000000", "-HF", rezultat, '/');
+ 179   1              izracunaj("HA","-HB",rezultat,'+');
+ 180   1              izracunaj("HB4","0",rezultat,'+');
+ 181   1              izracunaj("100","HAD", rezultat, '-');
+ 182   1              izracunaj("-b101","H4", rezultat, '*');
+ 183   1              izracunaj("2","H0", rezultat, '/');      //e_izracunaj ce prijaviti gresku jer dijelimo sa nulom;
+ 184   1              return;
+ 185   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    870    ----
+   CONSTANT SIZE    =     63    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      54
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
